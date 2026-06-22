@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#fde202">
+    <title>Billetera - Perfil con Verificación Facial e Imágenes</title>
+    <style>
+        :root {
+            --mp-amarillo: #fde202;
+            --mp-fondo: #FFFFFF;
+            --mp-blanco: #FFFFFF;
+            --mp-texto-oscuro: #333333;
+            --mp-texto-gris: #999999;
+            --mp-azul: #565fdb;
+            --mp-azul-claro: #E6F0FF;
+            --mp-verde: #00A650;
+            --mp-alerta: #FF7733;
+            --mp-borde: #EFEFEF;
+            --overlay-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #fbe507;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .app-container {
+            background-color: var(--mp-fondo);
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-content {
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 90px;
+        }
+
+        /* --- PANTALLA PRINCIPAL --- */
+        .fondo-header { background-color: var(--mp-amarillo); height: 250px; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        header { position: relative; z-index: 2; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .perfil-nav { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .icono-perfil-chico { width: 25px; height: 25px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--mp-azul); font-size: 1.2rem; overflow: hidden; }
+        .icono-perfil-chico img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        .header-iconos { display: flex; gap: 10px; }
+        .btn-redondo { width: 40px; height: 40px; background-color: transparent; border-radius: 0; display: flex; justify-content: center; align-items: center; border: none; font-size: 1.1rem; position: relative; }
+        .notificacion-dot { position: absolute; top: 5px; right: 5px; background-color: #D32F2F; color: white; font-size: 0.6rem; width: 16px; height: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+
+        /* --- TABS Y TARJETA --- */
+        .contenedor-tabs { position: relative; z-index: 3; display: flex; padding: 0 15px; margin-top: 10px; }
+        .tab { padding: 12px 20px; font-size: 0.95rem; font-weight: 600; }
+        .tab.activa { background-color: var(--mp-blanco); border-radius: 15px 15px 0 0; color: var(--mp-texto-oscuro); }
+        .tab.inactiva { color: rgba(0,0,0,0.6); }
+
+        .tarjeta-saldo { position: relative; z-index: 2; background-color: var(--mp-blanco); margin: 0 15px; border-radius: 0 20px 20px 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-top: -1px; }
+        .monto-estilizado { display: flex; align-items: flex-start; color: var(--mp-texto-oscuro); margin-top: 5px; margin-bottom: 5px; font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif; }
+        .monto-estilizado .signo { font-size: 1.4rem; margin-top: 6px; margin-right: 6px; font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif; }
+        .monto-estilizado .enteros { font-size: 2.4rem; font-weight: 500; letter-spacing: -0.8px; font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif; }
+        .monto-estilizado .centavos { font-size: 1.1rem; font-weight: 600; margin-top: 6px; font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif; }
+        .rendimiento { color: var(--mp-texto-oscuro); font-size: 0.9rem; margin-bottom: 25px; }
+        .rendimiento span { color: var(--mp-verde); font-weight: 600; }
+        .grid-botones-saldo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .btn-accion { background-color: var(--mp-azul-claro); border-radius: 15px; padding: 15px 5px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: none; text-align: center;}
+        .btn-accion img { max-width: 70%; max-height: 20px; object-fit: contain; }
+        .btn-accion span { color: var(--mp-azul); font-size: 0.9rem; font-weight: 500; }
+
+        /* --- BENEFICIOS Y ACTIVIDADES --- */
+        .seccion { position: relative; z-index: 2; padding: 25px 15px 10px 15px; }
+        .titulo-seccion { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .titulo-seccion h3 { font-size: 1.2rem; color: var(--mp-texto-oscuro); }
+        .titulo-seccion a { color: var(--mp-azul); text-decoration: none; font-size: 0.95rem; font-weight: 600; }
+        .grid-beneficios { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card-beneficio { background-color: #f3f5f9; border-radius: 15px; padding: 15px; }
+        .card-beneficio .icono-bg { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; margin-bottom: 15px; }
+        .card-beneficio p { color: var(--mp-texto-gris); font-size: 0.85rem; margin-bottom: 5px; }
+        .card-beneficio h4 { font-size: 0.95rem; color: var(--mp-texto-oscuro); line-height: 1.2; }
+        .lista-actividad { background-color: transparent; }
+        .item-actividad { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--mp-borde); }
+        .item-actividad:last-child { border-bottom: none; }
+        .info-izq { display: flex; align-items: center; gap: 15px; }
+        .icono-circular { width: 45px; height: 45px; border: 1px solid var(--mp-azul-claro); border-radius: 50%; display: flex; justify-content: center; align-items: center; background-color: var(--mp-blanco); color: var(--mp-azul); font-size: 1.2rem; }
+        .detalle h4 { font-size: 1rem; color: var(--mp-texto-oscuro); font-weight: 600; }
+        .detalle p { font-size: 0.9rem; color: var(--mp-texto-gris); margin-top: 2px; }
+        .monto-der { text-align: right; }
+        .monto-der h4 { font-size: 1.05rem; color: var(--mp-verde); }
+        .monto-der p { font-size: 0.85rem; color: var(--mp-texto-gris); margin-top: 2px; }
+        .btn-flotante-yellow { 
+            width: 55px; height: 55px; background-color: var(--mp-amarillo); border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; color: var(--mp-azul); font-size: 1.8rem; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+            position: absolute; 
+            right: 20px; 
+            bottom: 95px; 
+            z-index: 999999; 
+            cursor: pointer;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            touch-action: none; /* Previene el scroll de la página mientras se arrastra el botón */
+        }
+
+        /* Clase para ocultar el botón temporalmente con un efecto suave */
+        .btn-flotante-yellow.oculto {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+
+        /* --- NAVEGACIÓN INFERIOR --- */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; background-color: var(--mp-blanco); display: flex; justify-content: space-around; align-items: center; padding: 10px 0 15px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--mp-texto-gris); font-size: 0.7rem; width: 20%; text-decoration: none;}
+        .nav-icono img { width: 22px; height: 22px; object-fit: contain; }
+        .nav-item.activo { color: var(--mp-azul); font-weight: 600; }
+        .btn-qr-nav { width: 65px; height: 65px; background-color: #404ee5; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--mp-blanco); font-size: 2rem; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); box-shadow: 0 4px 10px rgba(64, 78, 229, 0.4); border: 4px solid var(--mp-fondo); }
+        .btn-qr-nav img { width: 25px; height: 25px; object-fit: contain; }
+
+        /* --- OVERLAY Y BOTTOM SHEET --- */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 99; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
+        .overlay.activo { opacity: 1; visibility: visible; }
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background-color: var(--mp-blanco); border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 100; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: 20px; }
+        .bottom-sheet.activo { transform: translateY(0); }
+        .barra-arrastre { width: 40px; height: 4px; background-color: #DDD; border-radius: 2px; margin: 10px auto 20px auto; }
+        .bs-usuario { display: flex; align-items: center; justify-content: space-between; padding: 0 20px 20px 20px; cursor: pointer; }
+        .bs-avatar { width: 50px; height: 50px; border: 1px solid var(--mp-borde); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; color: var(--mp-texto-oscuro); overflow: hidden;}
+        .bs-avatar img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        .bs-opcion { display: flex; align-items: center; gap: 15px; padding: 18px 20px; border-bottom: 1px solid var(--mp-borde); font-size: 1rem; color: var(--mp-texto-oscuro); cursor: pointer; }
+
+        /* --- PANTALLAS LATERALES --- */
+        .pantalla-lateral { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--mp-blanco); z-index: 150; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow-y: auto; }
+        .pantalla-lateral.activa { transform: translateX(0); }
+        .header-perfil { background-color: var(--mp-amarillo); padding: 20px 20px 40px 20px; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
+        .btn-volver { position: absolute; top: 20px; left: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--mp-texto-oscuro); }
+        .avatar-grande { width: 85px; height: 85px; background-color: var(--mp-blanco); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.2rem; margin-top: 15px; margin-bottom: 15px; overflow: hidden; border: 3px solid white;}
+        .avatar-grande img { max-width: 70%; max-height: 70%; object-fit: contain; }
+        .header-blanco { background-color: var(--mp-blanco); padding: 20px; position: relative; flex-shrink: 0; }
+        .header-blanco h2 { font-size: 1.6rem; color: var(--mp-texto-oscuro); margin-top: 40px; margin-bottom: 10px; }
+        .header-blanco p { font-size: 0.95rem; color: var(--mp-texto-oscuro); line-height: 1.4; }
+        .lista-config { background-color: var(--mp-blanco); flex-grow: 1; padding-bottom: 40px; }
+        .lista-config.redondeada { border-top-left-radius: 15px; border-top-right-radius: 15px; margin-top: -20px; position: relative; z-index: 2; padding-top: 10px; }
+        .titulo-grupo { font-size: 1.15rem; color: var(--mp-texto-oscuro); font-weight: 600; padding: 25px 20px 10px 20px; }
+        .item-config { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer; }
+        .item-config-izq { display: flex; align-items: center; gap: 18px; width: 100%; }
+        .item-icono { font-size: 1.3rem; opacity: 0.7; width: 20px; text-align: center; }
+        
+        /* Ajuste para que las imágenes se vean perfectas en los iconos de la lista */
+        .item-icono img { width: 25px; height: 25px; object-fit: contain; }
+
+        .item-textos h4 { font-size: 1rem; color: var(--mp-texto-oscuro); font-weight: 400; margin-bottom: 3px; }
+        .item-textos p { font-size: 0.85rem; color: var(--mp-texto-gris); }
+        .item-der { display: flex; align-items: center; gap: 10px; color: var(--mp-texto-gris); font-size: 1.2rem; }
+        .check-verde { background-color: var(--mp-verde); color: var(--mp-blanco); border-radius: 50%; width: 18px; height: 18px; display: flex; justify-content: center; align-items: center; font-size: 0.7rem; font-weight: bold; }
+        .footer-perfil { padding: 30px 20px; font-size: 0.9rem; color: var(--mp-texto-gris); text-align: left; }
+        .footer-perfil a { color: var(--mp-azul); text-decoration: none; }
+        .footer-seguridad { display: flex; gap: 10px; align-items: flex-start; padding: 30px 20px; font-size: 0.85rem; color: var(--mp-texto-gris); line-height: 1.4; }
+
+        /* --- HEADER BLANCO EXACTO A LA IMAGEN --- */
+        .header-blanco-info { 
+            background-color: var(--mp-blanco); 
+            padding: 15px 20px 5px 20px; 
+            position: relative; 
+            flex-shrink: 0; 
+            padding-top: calc(15px + env(safe-area-inset-top, 28px)) !important;
+        }
+        .header-blanco-info .btn-volver {
+            position: static;
+            padding: 0;
+            margin-bottom: 15px;
+            color: var(--mp-texto-oscuro);
+        }
+        .titulo-pantalla-grande {
+            font-size: 1.8rem;
+            color: var(--mp-texto-oscuro);
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        .subtitulo-pantalla {
+            font-size: 1rem;
+            color: var(--mp-texto-oscuro);
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+        .item-textos h4 {
+            font-size: 1.05rem;
+            margin-bottom: 2px;
+        }
+        .header-amarillo-pequeno {
+            background-color: var(--mp-amarillo);
+            
+            /* 1. Subimos el elemento restando los 15px originales MÁS el tamaño exacto del status bar */
+            margin: calc(-15px - env(safe-area-inset-top, 28px)) -20px 8px -20px;
+            
+            /* 2. Rellenamos ese mismo espacio por dentro para que cubra el fondo bajo la batería/hora */
+            padding: calc(8px + env(safe-area-inset-top, 28px)) 20px 8px 20px;
+            
+            border-radius: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* 3. Cambiamos el height fijo por un min-height para que no se estire hacia abajo de forma forzada */
+            min-height: 30px;
+        }
+
+        /* =========================================
+           PANTALLA DE BLOQUEO (HUELLA / FACE ID)
+           ========================================= */
+        #pantalla-bloqueo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fbe507;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            color: var(--mp-texto-oscuro);
+            padding-top: 120px;
+        }
+        
+        #pantalla-bloqueo.desbloqueado {
+            animation: slideDownUnlock 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        }
+
+        .icono-candado {
+            width: 120px;
+            height: 120px;
+            background-color: transparent;
+            border-radius: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            color: var(--mp-azul);
+        }
+
+        .texto-bloqueo {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtexto-bloqueo {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            margin-bottom: 40px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .btn-huella {
+            background-color: var(--mp-azul); /* Botón azul */
+            border: none;
+            border-radius: 30px;
+            padding: 15px 30px;
+            color: var(--mp-blanco); /* Texto e ícono blanco */
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* ----- ESTILOS DE LA VERIFICACIÓN FACIAL ----- */
+        #face-verification-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--overlay-bg); z-index: 9999; 
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column; padding: 20px; box-sizing: border-box;
+        }
+        #camera-container {
+            width: 80vw; height: 100vw; max-width: 400px; max-height: 500px;
+            border-radius: 50%; border: 4px solid #ffffff; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); background-color: #333; margin-bottom: 20px;
+        }
+        #face-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        #verification-text { color: #ffffff; font-size: 20px; font-weight: 600; text-align: center; line-height: 1.3; max-width: 80%; margin-top: 20px; }
+        #close-verification { position: absolute; top: 20px; right: 20px; background: none; border: none; color: #ffffff; font-size: 35px; cursor: pointer; }
+
+        /* =========================================
+           CORRECCIÓN DE BARRAS DE ANDROID (SAFE AREA)
+           ========================================= */
+           
+        /* 1. Empujar el contenido superior para esquivar la batería/hora */
+        header { 
+            padding-top: calc(15px + env(safe-area-inset-top, 28px)) !important; 
+        }
+        .fondo-header { 
+            height: calc(250px + env(safe-area-inset-top, 28px)) !important; 
+        }
+        .header-perfil { 
+            padding-top: calc(20px + env(safe-area-inset-top, 28px)) !important; 
+        }
+        .header-blanco { 
+            padding-top: calc(20px + env(safe-area-inset-top, 28px)) !important; 
+        }
+        .btn-volver { 
+            top: calc(15px + env(safe-area-inset-top, 28px)) !important; 
+        }
+
+        /* 2. Empujar el contenido inferior para esquivar los botones de navegación */
+        .bottom-nav { 
+            padding-bottom: calc(15px + env(safe-area-inset-bottom, 20px)) !important; 
+        }
+        .main-content { 
+            padding-bottom: calc(100px + env(safe-area-inset-bottom, 20px)) !important; 
+        }
+        .bottom-sheet { 
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 20px)) !important; 
+        }
+        .lista-config { 
+            padding-bottom: calc(40px + env(safe-area-inset-bottom, 20px)) !important; 
+        }
+
+        /* --- SPINNER DE CARGA --- */
+        .loader-mp {
+            border: 5px solid var(--mp-borde);
+            border-top: 5px solid var(--mp-azul);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes slideDownUnlock {
+            0% {
+                transform: translateY(0);
+                border-radius: 0;
+                pointer-events: none;
+            }
+            25% {
+                border-radius: 80px 80px 0 0;
+            }
+            50% {
+                transform: translateY(50vh);
+                border-radius: 200px 200px 0 0;
+            }
+            75% {
+                transform: translateY(75vh);
+                border-radius: 350px 350px 0 0;
+            }
+            99% {
+                transform: translateY(100vh);
+                border-radius: 500px 500px 0 0;
+                pointer-events: none;
+                visibility: visible;
+            }
+            100% {
+                transform: translateY(100vh);
+                border-radius: 500px 500px 0 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Eliminar bordes fantasma del video */
+        video {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- --- PANTALLA DE BLOQUEO INICIAL --- -->
+    <div id="pantalla-bloqueo">
+        <div class="icono-candado" style="position: relative; width: 240px; height: 240px; margin-bottom: 25px; background-color: #fbe507; overflow: hidden;">
+            
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #fbe507; z-index: 0;"></div>
+            
+            <video id="video-candado" playsinline muted preload="auto" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; object-fit: contain; z-index: 1; background-color: #fbe507; -webkit-mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 50%, transparent 100%); mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 50%, transparent 100%);">
+                <source src="video4.mp4" type="video/mp4">
+            </video>
+
+            <div id="tapa-candado" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #fbe507; z-index: 3; display: flex; justify-content: center; align-items: center;">
+                <img src="mercadopago1.png" alt="Perfil" style="width: 120px; height: 120px; object-fit: contain; background-color: #fbe507;">
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="app-container">
+        
+        <!-- Contenido de la Pantalla Principal -->
+        <div class="main-content">
+            <div class="fondo-header"></div>
+            <header>
+                <div class="perfil-nav" onclick="abrirBottomSheet()">
+                    <div class="icono-perfil-chico"><img src="holatomas.png" alt="Perfil"></div>
+                    <span style="font-weight: 600; font-size: 1.05rem; color: var(--mp-texto-oscuro);">Hola, Tomas</span>
+                </div>
+                <div class="header-iconos">
+                    <button class="btn-redondo"><img src="lupa (2).png" alt="Buscar" style="width: 32px; height: 32px; object-fit: contain;"></button>
+                    <button class="btn-redondo"><img src="ruido.png" alt="Señal" style="width: 32px; height: 32px; object-fit: contain;"></button>
+                    <button class="btn-redondo" style="position: relative;"><img src="campana.png" alt="Notificaciones" style="width: 32px; height: 32px; object-fit: contain;"><div class="notificacion-dot">4</div></button>
+                </div>
+            </header>
+
+            <div class="contenedor-tabs">
+                <div class="tab activa">Pesos</div>
+                <div class="tab inactiva">Reservas</div>
+            </div>
+
+            <div class="tarjeta-saldo">
+                <div class="monto-estilizado">
+                    <span class="signo">$</span>
+                    <span class="enteros">92.277</span>
+                    <span class="centavos">96</span>
+                    <span style="margin-left: 10px; margin-top: 10px; font-size: 1.3rem;"><img src="ojo.png" alt="Ojo" style="width: 18px; height: 18px; object-fit: contain;"></span>
+                    <span style="margin-left: auto; color: var(--mp-texto-gris); margin-top: 10px; font-size: 1.2rem;">›</span>
+                </div>
+                <div class="rendimiento">
+                    Los últimos 12 meses rindió <span>$ 8.431,53</span>
+                </div>
+                <div class="grid-botones-saldo">
+                    <button class="btn-accion">
+                        <img src="ingresar.png" alt="Ingresar">
+                        <span>Ingresar</span>
+                    </button>
+                    <button class="btn-accion">
+                        <img src="transferir.png" alt="Transferir">
+                        <span>Transferir</span>
+                    </button>
+                    <button class="btn-accion">
+                        <img src="alias.png" alt="Tus alias">
+                        <span>Tus alias</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="seccion">
+                <div class="titulo-seccion">
+                    <h3>Beneficios</h3>
+                    <a href="#">Conocer todos ➔</a>
+                </div>
+                <div class="grid-beneficios">
+                    <div class="card-beneficio">
+                        <div class="icono-bg" style="background-color: #f3f5f9; color: #DAA520;"><img src="beneficios.png" alt="Beneficios" style="width:45px; height:45px; object-fit:contain;"></div>
+                        <p>Plataforma</p>
+                        <h4>Descubrí todos tus beneficios</h4>
+                    </div>
+                    <div class="card-beneficio">
+                        <div class="icono-bg" style="background-color: #f3f5f9; color: #D32F2F;"><img src="descuentos.png" alt="Descuentos" style="width:45px; height:45px; object-fit:contain;"></div>
+                        <p>Ecosistema</p>
+                        <h4>Descuentos exclusivos</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="seccion" style="padding-top: 10px; position: relative;">
+                <div class="titulo-seccion">
+                    <h3>Últimas actividades</h3>
+                    <a href="#">Consultar todas ➔</a>
+                </div>
+                <div class="lista-actividad">
+                    <div class="item-actividad">
+                        <div class="info-izq">
+                            <div class="icono-circular"><img src="recivido.png" alt="Recibido" style="width: 28px; height: 28px; object-fit: contain;"></div>
+                            <div class="detalle">
+                                <h4>Lorena Elisa Salgueiro</h4>
+                                <p>Transferencia recibida</p>
+                            </div>
+                        </div>
+                        <div class="monto-der">
+                            <h4>+ $ 75.000</h4>
+                            <p>16:46 hs</p>
+                        </div>
+                    </div>
+                    <div class="item-actividad">
+                        <div class="info-izq">
+                            <div class="icono-circular" style="color: var(--mp-texto-oscuro);"><img src="enviado.png" alt="Enviado" style="width: 28px; height: 28px; object-fit: contain;"></div>
+                            <div class="detalle">
+                                <h4>Matias Gallardo</h4>
+                                <p>Pago</p>
+                            </div>
+                        </div>
+                        <div class="monto-der">
+                            <h4 style="color: var(--mp-texto-oscuro);">- $ 12.500</h4>
+                            <p>Ayer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item activo">
+                <div class="nav-icono"><img src="cuenta.png" alt="Cuenta"></div>
+                <span>Cuenta</span>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icono"><img src="tarjetas.png" alt="Tarjetas"></div>
+                <span>Tarjetas</span>
+            </a>
+            <div style="position: relative; width: 20%; height: 20px;"> 
+                <a href="#" class="btn-qr-nav"><img src="qr.png" alt="QR"></a>
+            </div>
+            <a href="#" class="nav-item">
+                <div class="nav-icono"><img src="serviciosmp.png" alt="Servicios"></div>
+                <span>Servicios</span>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icono"><img src="mas.png" alt="Más"></div>
+                <span>Más</span>
+            </a>
+        </nav>
+
+        <div class="btn-flotante-yellow"><img src="ia.png" alt="IA" style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></div>
+
+        <div id="overlay" class="overlay" onclick="cerrarBottomSheet()"></div>
+
+        <!-- Menú inferior al tocar el perfil -->
+        <div id="bottom-sheet" class="bottom-sheet">
+            <div class="barra-arrastre"></div>
+            <div class="bs-usuario" onclick="abrirPantallaPerfil()">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="bs-avatar"><img src="tg.png" alt="Perfil" style="width: 35px; height: 35px; object-fit: contain;"></div>
+                    <div>
+                        <h3 style="font-size: 1.15rem; color: var(--mp-texto-oscuro);">Tomas Gallardo</h3>
+                        <p style="font-size: 0.9rem; color: var(--mp-texto-gris); margin-top: 2px;">tomygallardo2704@gmail.com</p>
+                    </div>
+                </div>
+                <div style="color: var(--mp-azul); font-size: 1.4rem;">›</div>
+            </div>
+            <div style="background-color: #FFF5F0; margin: 0 20px; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                <div style="background-color: var(--mp-alerta); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 0.8rem;">!</div>
+                <span style="font-size: 0.95rem; color: var(--mp-texto-oscuro);">Crear llave de acceso para iniciar sesión</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <div class="bs-opcion"><img src="reportar.png" alt="Reportar" style="width: 18px; height: 18px; object-fit: contain;"> Reportar un problema de seguridad</div>
+                <div class="bs-opcion"><img src="agregar.png" alt="Agregar" style="width: 18px; height: 18px; object-fit: contain;"> Agregar cuenta</div>
+                <div class="bs-opcion"><img src="cerrarsesion.png" alt="Cerrar sesión" style="width: 18px; height: 18px; object-fit: contain;"> Cerrar sesión</div>
+            </div>
+        </div>
+
+        <!-- Pantalla lateral: Tu perfil -->
+        <div id="pantalla-perfil" class="pantalla-lateral">
+            <div class="header-perfil">
+                <button class="btn-volver" onclick="cerrarPantallaPerfil()">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="20" y1="12" x2="4" y2="12"></line>
+                        <polyline points="10 18 4 12 10 6"></polyline>
+                    </svg>
+                </button>
+                <div style="width: 100%; text-align: center; font-size: 1.1rem; color: var(--mp-texto-oscuro);">Tu perfil</div>
+                <div class="avatar-grande"><img src="tg.png" alt="Perfil Grande"></div>
+                <h2 style="font-size: 1.3rem; color: var(--mp-texto-oscuro);">Tomas Gallardo</h2>
+                <p style="font-size: 0.95rem; margin-top: 5px; color: var(--mp-texto-oscuro);">tomygallardo2704@gmail.com</p>
+            </div>
+            <div class="lista-config redondeada" style="position: relative;">
+                
+                <div class="item-config" onclick="abrirPantallaInfoPerfil()">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="informacion de tu perfil.png" alt="Información" style="width:24px; height:24px; object-fit:contain;"></div>
+                        <div class="item-textos"><h4>Información de tu perfil</h4></div>
+                    </div>
+                    <div class="item-der">›</div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="seguridad2.png" alt="Seguridad" style="width:22px; height:22px; object-fit:contain;"></div>
+                        <div class="item-textos"><h4>Seguridad</h4></div>
+                    </div>
+                    <div class="item-der"><div style="background-color: var(--mp-alerta); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 0.7rem;">!</div>›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="menores.png" alt="Menores a cargo" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Responsable de cuenta</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="meli+.png" alt="Plataforma+" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Plataforma+</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="tarjetas2.png" alt="Tarjetas" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Tarjetas</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="direcciones.png" alt="Direcciones" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Direcciones</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="privacidad.png" alt="Privacidad" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Privacidad</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="item-config">
+                    <div class="item-config-izq"><div class="item-icono"><img src="comunicaciones.png" alt="Comunicaciones" style="width:22px; height:22px; object-fit:contain;"></div><div class="item-textos"><h4>Comunicaciones</h4></div></div>
+                    <div class="item-der">›</div>
+                </div>
+                <div class="footer-perfil">
+                    Podés <a href="#">cancelar tu cuenta</a> siempre que lo desees.
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla lateral: Información de tu perfil -->
+        <div id="pantalla-info-perfil" class="pantalla-lateral" style="z-index: 200; background-color: var(--mp-blanco);">
+            
+            <div class="header-blanco-info">
+                <div class="header-amarillo-pequeno"></div>
+                <button class="btn-volver" onclick="volverAPantallaPerfil()">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <h2 class="titulo-pantalla-grande">Información de tu perfil</h2>
+                <p class="subtitulo-pantalla">Podés agregar, modificar o corregir tu información personal y los datos de la cuenta.</p>
+            </div>
+
+            <!-- Spinner de carga -->
+            <div id="spinner-info-perfil" style="display: none; width: 100%; height: calc(100vh - 250px); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <div class="loader-mp" style="margin: 0;"></div>
+            </div>
+
+            <div class="lista-config" id="contenido-info-perfil" style="padding-top: 10px; background-color: transparent;">
+
+                <!-- SECCIÓN: Información personal -->
+                <div class="titulo-grupo" style="font-size: 1.25rem;">Información personal</div>
+                
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="perfiles.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>Tomas Gallardo</h4>
+                            <p>Nombre y apellido.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><div class="check-verde">✓</div><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="perfiles.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>44803113</h4>
+                            <p>Número de DNI.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><div class="check-verde">✓</div><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="SOLTERO.png" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>Soltero/a</h4>
+                            <p>Estado civil.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="perfiles.jpeg" alt="Icono" style="width: 20px; height: 20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>Tomas Gallardo</h4>
+                            <p>Nombre elegido.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <!-- SECCIÓN: Datos fiscales -->
+                <div class="titulo-grupo" style="font-size: 1.25rem; margin-top: 10px;">Datos fiscales</div>
+                
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="fiscal.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>Consumidor Final</h4>
+                            <p>Condición fiscal.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><div class="check-verde">✓</div><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <!-- SECCIÓN: Datos de la cuenta -->
+                <div class="titulo-grupo" style="font-size: 1.25rem; margin-top: 10px;">Datos de la cuenta</div>
+                
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="mail.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>tomygallardo2704@gmail.com</h4>
+                            <p>E-mail donde recibís comunicaciones.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><div class="check-verde">✓</div><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="tele.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>+541130030961</h4>
+                            <p>Número donde recibís códigos de verificación y comunicaciones.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><div class="check-verde">✓</div><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="perfiles.jpeg" alt="Icono" style="width:20px; height:20px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4 style="text-transform: uppercase;">GALLARDOTOMAS20230625210710</h4>
+                            <p>Nombre de usuario.</p>
+                        </div>
+                    </div>
+                    <div class="item-der"><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="item-config">
+                    <div class="item-config-izq">
+                        <div class="item-icono"><img src="aliasmp.png" alt="Icono" style="width:24px; height:24px; object-fit:contain;"></div>
+                        <div class="item-textos">
+                            <h4>Consultá tu CVU y alias</h4>
+                        </div>
+                    </div>
+                    <div class="item-der"><span style="color: #bbb;">›</span></div>
+                </div>
+
+                <div class="footer-seguridad">
+                    <div class="item-icono" style="opacity: 1; margin-right: 5px;"><img src="escudo.png" alt="Seguridad" style="width: 32px; height: 32px; object-fit:contain;"></div>
+                    <div>Tu información personal está siempre protegida. Si tenés dudas, podés consultar <a href="#" style="color: var(--mp-azul);">cómo cuidamos tus datos.</a></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ----- ESTRUCTURA HTML DE LA VERIFICACIÓN FACIAL ----- -->
+    <div id="face-verification-overlay">
+        <button id="close-verification" onclick="stopVerification()">×</button>
+        <div id="camera-container">
+            <video id="face-video" autoplay playsinline></video>
+        </div>
+        <p id="verification-text">UBIQUE SU ROSTRO DENTRO DE ESTE ÓVALO</p>
+    </div>
+
+     <script>
+        // --- FUNCIÓN QUE LLAMA AL LECTOR REAL DE ANDROID ---
+        function solicitarBiometria() {
+            // Verifica si la app está corriendo en Android con el puente conectado
+            if (window.AndroidBiometric) {
+                // Llama al lector de huellas
+                window.AndroidBiometric.pedirHuella();
+            } else {
+                // Si estás probando en la PC y no en el celular, desbloquea igual
+                desbloquearApp();
+            }
+        }
+
+        // --- FUNCIÓN PARA DESBLOQUEAR ---
+        function desbloquearApp() {
+            const tapaCandado = document.getElementById('tapa-candado');
+            const videoCandado = document.getElementById('video-candado');
+            const pantallaBloqueo = document.getElementById('pantalla-bloqueo');
+
+            // Hacemos una pausa (opcional) y luego le damos play al video
+            setTimeout(() => {
+                videoCandado.play().catch(error => {
+                    console.log("Error al reproducir el video:", error);
+                    pantallaBloqueo.classList.add('desbloqueado');
+                });
+
+                // LA MAGIA: Recién cuando el video esté reproduciendo el primer frame, borramos la tapa.
+                // Esto evita el pantallazo gris del reproductor cargando.
+                videoCandado.addEventListener('playing', function() {
+                    if (tapaCandado) tapaCandado.style.display = 'none';
+                }, { once: true });
+
+            }, 500); // Le bajé el tiempo a medio segundo para que sea más fluido.
+
+            // Cuando termine el video, ocultar totalmente la pantalla amarilla
+            videoCandado.onended = function() {
+                pantallaBloqueo.classList.add('desbloqueado');
+                const btn = document.querySelector('.btn-flotante-yellow');
+                if (btn) {
+                    btn.classList.remove('oculto');
+                    btn.style.display = '';
+                }
+            };
+        }
+
+        function abrirBottomSheet() {
+            document.getElementById('overlay').classList.add('activo');
+            document.getElementById('bottom-sheet').classList.add('activo');
+        }
+
+        function cerrarBottomSheet() {
+            document.getElementById('overlay').classList.remove('activo');
+            document.getElementById('bottom-sheet').classList.remove('activo');
+        }
+
+        function abrirPantallaPerfil() {
+            cerrarBottomSheet();
+            animarBotonIA();
+            setTimeout(() => {
+                document.getElementById('pantalla-perfil').classList.add('activa');
+            }, 100);
+        }
+
+        function cerrarPantallaPerfil() {
+            animarBotonIA();
+            document.getElementById('pantalla-perfil').classList.remove('activa');
+        }
+
+        function abrirPantallaInfoPerfil() {
+            animarBotonIA();
+            document.getElementById('pantalla-info-perfil').classList.add('activa');
+            
+            // Mostrar spinner y ocultar contenido
+            const contenido = document.getElementById('contenido-info-perfil');
+            const spinner = document.getElementById('spinner-info-perfil');
+            const pantalla = document.getElementById('pantalla-info-perfil');
+            const subtitulo = pantalla.querySelector('.subtitulo-pantalla');
+            const titulo = pantalla.querySelector('.titulo-pantalla-grande');
+            const headerAmarillo = pantalla.querySelector('.header-amarillo-pequeno');
+            const btnVolver = pantalla.querySelector('.btn-volver');
+            
+            if (contenido && spinner) {
+                contenido.style.display = 'none';
+                spinner.style.display = 'flex';
+                if (subtitulo) subtitulo.style.display = 'none';
+                if (titulo) titulo.style.display = 'none';
+                if (btnVolver) btnVolver.style.display = 'none';
+                // El header amarillo se mantiene visible durante la carga
+                
+                // Simular tiempo de carga (1.5 segundos)
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                    contenido.style.display = 'block';
+                    if (subtitulo) subtitulo.style.display = 'block';
+                    if (titulo) titulo.style.display = 'block';
+                    if (headerAmarillo) headerAmarillo.style.display = 'flex';
+                    if (btnVolver) btnVolver.style.display = 'block';
+                }, 1500);
+            }
+        }
+
+        function volverAPantallaPerfil() {
+            animarBotonIA();
+            document.getElementById('pantalla-info-perfil').classList.remove('activa');
+        }
+
+        // --- LÓGICA DEL BOTÓN FLOTANTE ANIMADO Y ARRASTRABLE ---
+        const btnIA = document.querySelector('.btn-flotante-yellow');
+
+        // Si la pantalla de bloqueo está activa al inicio, ocultar el botón
+        (function ocultarSiBloqueoActivo(){
+            try {
+                const pantallaBloqueo = document.getElementById('pantalla-bloqueo');
+                if (btnIA && pantallaBloqueo && !pantallaBloqueo.classList.contains('desbloqueado')) {
+                    btnIA.classList.add('oculto');
+                }
+            } catch(e){}
+        })();
+
+        function animarBotonIA() {
+            if(btnIA) {
+                btnIA.classList.add('oculto');
+                setTimeout(() => {
+                    btnIA.classList.remove('oculto');
+                }, 400); // Reaparece a los 400 milisegundos
+            }
+        }
+
+        if (btnIA) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            btnIA.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                const rect = btnIA.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+                btnIA.style.transition = 'none'; // Desactivar transición para evitar lag al mover
+            });
+
+            btnIA.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault(); // Evitar scroll accidental
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+                
+                btnIA.style.left = `${initialX + dx}px`;
+                btnIA.style.top = `${initialY + dy}px`;
+                btnIA.style.right = 'auto'; 
+                btnIA.style.bottom = 'auto';
+            }, { passive: false });
+
+            btnIA.addEventListener('touchend', () => {
+                isDragging = false;
+                btnIA.style.transition = 'opacity 0.3s ease, transform 0.3s ease'; // Restaurar transiciones
+            });
+        }
+
+        // --- LÓGICA DE VERIFICACIÓN FACIAL ---
+        let stream = null;
+
+        async function startVerification() {
+            const overlay = document.getElementById('face-verification-overlay');
+            const video = document.getElementById('face-video');
+            try {
+                // Pedimos acceso a la cámara frontal
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "user",
+                        width: { ideal: 640 },
+                        height: { ideal: 640 }
+                    },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+                overlay.style.display = 'flex';
+
+            } catch (error) {
+                console.error("Error accediendo a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de dar permisos.");
+                overlay.style.display = 'none';
+            }
+        }
+
+        function stopVerification() {
+            const overlay = document.getElementById('face-verification-overlay');
+            const video = document.getElementById('face-video');
+            
+            if (stream) {f
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            overlay.style.display = 'none';
+        }
+
+        // Cierra la cámara si hacés clic en el fondo oscuro
+        document.getElementById('face-verification-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'face-verification-overlay') {
+                stopVerification();
+            }
+        });
+
+        // --- DISPARAR HUELLA AUTOMÁTICAMENTE AL INICIAR ---
+        window.onload = function() {
+            setTimeout(() => {
+                solicitarBiometria();
+            }, 500); // Se le da medio segundo para que renderice la pantalla antes de pedir la huella
+        };
+    </script>
+</body>
+</html>
